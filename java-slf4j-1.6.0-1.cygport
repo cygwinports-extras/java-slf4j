@@ -1,0 +1,41 @@
+JAVA_CLASSPATH="commons-logging.jar:log4j.jar"
+inherit java
+
+DESCRIPTION="Simple Logging Facade for Java"
+HOMEPAGE="http://www.slf4j.org/"
+SRC_URI="http://www.slf4j.org/dist/${P#java-}.tar.gz"
+
+DISTCLEANFILES="*.jar"
+
+src_compile() {
+	local srcpath
+
+	lndirs
+	cd ${B}
+	for d in slf4j-api slf4j-simple slf4j-nop slf4j-jdk14 slf4j-log4j12 slf4j-jcl
+	do
+		pushd ${d}
+
+		mkdir -p build/classes
+		cygjavac -d build/classes $(find src/main/java -name '*.java')
+		case ${d} in
+			slf4j-api)
+				rm -fr build/classes/org/slf4j/impl/
+				CLASSPATH+=:${B}/slf4j-api-${PV}.jar
+				;;
+		esac
+		cygjar cf ../${d}-${PV}.jar -C build/classes org
+
+		srcpath+=:${d}/src/main/java
+
+		popd
+	done
+
+	cygjavadoc -d javadoc -sourcepath ${srcpath} -subpackages org.slf4j
+}
+
+src_install() {
+	cd ${B}
+	dojar *.jar
+	dojavadoc javadoc
+}
